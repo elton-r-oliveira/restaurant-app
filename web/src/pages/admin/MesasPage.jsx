@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
+import { conectarSocket, desconectarSocket } from '../../services/socket';
 
 export default function MesasPage() {
   const [mesas,  setMesas]  = useState([]);
@@ -12,7 +13,17 @@ export default function MesasPage() {
     setMesas(data);
   }
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => {
+    carregar();
+    const s = conectarSocket();
+    s.on('mesa_atualizada', ({ mesa_id, status }) =>
+      setMesas((prev) => prev.map((m) => m.id === mesa_id ? { ...m, status } : m))
+    );
+    return () => {
+      s.off('mesa_atualizada');
+      desconectarSocket();
+    };
+  }, []);
 
   async function salvar(e) {
     e.preventDefault();

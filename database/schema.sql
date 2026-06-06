@@ -103,11 +103,7 @@ CREATE TABLE comandas (
     FOREIGN KEY (garcom_id) REFERENCES usuarios(id) ON DELETE RESTRICT
 );
 
--- Garante que só exista uma comanda aberta por mesa
-CREATE UNIQUE INDEX uq_comanda_aberta_por_mesa
-  ON comandas (mesa_id, status)
-  -- MySQL não suporta partial index; usamos trigger abaixo para a regra de negócio
-;
+-- Regra garantida via trigger abaixo (não via unique index, pois MySQL não suporta partial index)
 
 -- -------------------------------------------------------------
 -- Itens da comanda

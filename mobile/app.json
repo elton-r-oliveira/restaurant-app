@@ -4,23 +4,13 @@
     "slug": "comanda-digital",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
-    },
-    "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "app.comanda.digital"
-    },
+    "userInterfaceStyle": "light",
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
       "package": "app.comanda.digital"
     },
-    "plugins": ["expo-router", "expo-secure-store"]
+    "plugins": ["expo-secure-store"]
   }
 }

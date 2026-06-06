@@ -3,6 +3,7 @@ import MesasPage     from './MesasPage';
 import CardapioPage  from './CardapioPage';
 import UsuariosPage  from './UsuariosPage';
 import RelatorioPage from './RelatorioPage';
+import CozinhaPage   from '../cozinha/CozinhaPage';
 
 export default function AdminRoutes() {
   const navigate = useNavigate();
@@ -23,7 +24,8 @@ export default function AdminRoutes() {
         <NavLink to="/admin/mesas"    style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Mesas</NavLink>
         <NavLink to="/admin/cardapio" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Cardápio</NavLink>
         <NavLink to="/admin/usuarios" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Usuários</NavLink>
-        <NavLink to="/admin/relatorio"style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Relatório</NavLink>
+        <NavLink to="/admin/relatorio" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Relatório</NavLink>
+        <NavLink to="/admin/cozinha"   style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Cozinha</NavLink>
         <button onClick={sair} style={{ ...link, background: 'transparent', border: '1px solid #555', cursor: 'pointer', marginLeft: 'auto' }}>Sair</button>
       </nav>
 
@@ -33,6 +35,7 @@ export default function AdminRoutes() {
           <Route path="cardapio"  element={<CardapioPage />} />
           <Route path="usuarios"  element={<UsuariosPage />} />
           <Route path="relatorio" element={<RelatorioPage />} />
+          <Route path="cozinha"   element={<CozinhaPage />} />
           <Route path="*"         element={<MesasPage />} />
         </Routes>
       </div>
