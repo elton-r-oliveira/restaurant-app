@@ -2,11 +2,11 @@
 -- Comanda Digital — Schema do Banco de Dados
 -- =============================================================
 
-CREATE DATABASE IF NOT EXISTS comanda_db
+CREATE DATABASE IF NOT EXISTS BDRestaurant_App
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE comanda_db;
+USE BDRestaurant_App;
 
 -- -------------------------------------------------------------
 -- Restaurantes (multi-tenant root)
