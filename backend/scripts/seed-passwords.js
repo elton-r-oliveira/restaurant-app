@@ -9,7 +9,7 @@ const db     = require('../src/config/database');
 const USUARIOS = [
   { email: 'demo@comanda.app',    senha: 'demo123',    tabela: 'restaurantes' },
   { email: 'admin@comanda.app',   senha: 'admin123',   tabela: 'usuarios' },
-  { email: 'joao@comanda.app',    senha: 'garcom123',  tabela: 'usuarios' },
+  { email: 'alfred@comanda.app',    senha: 'garcom123',  tabela: 'usuarios' },
   { email: 'cozinha@comanda.app', senha: 'cozinha123', tabela: 'usuarios' },
 ];
 
