@@ -33,7 +33,7 @@ router.post('/', autenticar, autorizar('admin'), async (req, res, next) => {
     );
     res.status(201).json({ id: r.insertId, nome, email, role, ativo: true });
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ erro: 'Email já cadastrado neste restaurante' });
+    if (err.number === 2627 || err.number === 2601) return res.status(409).json({ erro: 'Email já cadastrado neste restaurante' });
     next(err);
   }
 });

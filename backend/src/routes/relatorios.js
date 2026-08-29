@@ -10,7 +10,7 @@ router.get('/dia', autenticar, autorizar('admin'), async (req, res, next) => {
   try {
     const data = req.query.data || new Date().toISOString().slice(0, 10);
 
-    const [[resumo]] = await db.query(
+    const [resumoRows] = await db.query(
       `SELECT
          COUNT(*)                                AS total_comandas,
          COALESCE(SUM(total), 0)                 AS faturamento,
@@ -18,22 +18,22 @@ router.get('/dia', autenticar, autorizar('admin'), async (req, res, next) => {
        FROM comandas
        WHERE restaurante_id = ?
          AND status = 'fechada'
-         AND DATE(fechada_em) = ?`,
+         AND CAST(fechada_em AS DATE) = ?`,
       [rid(req), data]
     );
+    const resumo = resumoRows[0];
 
     const [itensMaisVendidos] = await db.query(
-      `SELECT i.nome, SUM(ci.quantidade) AS total_vendido,
+      `SELECT TOP 10 i.nome, SUM(ci.quantidade) AS total_vendido,
               SUM(ci.quantidade * ci.preco_unitario) AS receita
        FROM comanda_itens ci
        JOIN itens i        ON i.id = ci.item_id
        JOIN comandas c     ON c.id = ci.comanda_id
        WHERE c.restaurante_id = ?
          AND c.status = 'fechada'
-         AND DATE(c.fechada_em) = ?
-       GROUP BY ci.item_id
-       ORDER BY total_vendido DESC
-       LIMIT 10`,
+         AND CAST(c.fechada_em AS DATE) = ?
+       GROUP BY ci.item_id, i.nome
+       ORDER BY total_vendido DESC`,
       [rid(req), data]
     );
 

@@ -104,7 +104,9 @@ router.post('/', autenticar, async (req, res, next) => {
       res.status(201).json(novaComanda);
     } catch (err) {
       await conn.rollback();
-      if (err.sqlState === '45000') return res.status(409).json({ erro: err.message });
+      if (err.number === 2601 || err.number === 2627) {
+        return res.status(409).json({ erro: 'Esta mesa já possui uma comanda aberta.' });
+      }
       throw err;
     } finally {
       conn.release();
@@ -179,9 +181,10 @@ router.patch('/:id/itens/:itemId/status', autenticar, async (req, res, next) => 
     const prontoEm = status === 'pronto' ? new Date() : null;
 
     const [result] = await db.query(
-      `UPDATE comanda_itens ci
-       JOIN comandas c ON c.id = ci.comanda_id
+      `UPDATE ci
        SET ci.status = ?, ci.pronto_em = COALESCE(?, ci.pronto_em)
+       FROM comanda_itens ci
+       JOIN comandas c ON c.id = ci.comanda_id
        WHERE ci.id = ? AND ci.comanda_id = ? AND c.restaurante_id = ?`,
       [status, prontoEm, req.params.itemId, req.params.id, rid(req)]
     );
@@ -214,7 +217,7 @@ router.post('/:id/fechar', autenticar, async (req, res, next) => {
       await conn.beginTransaction();
 
       await conn.query(
-        "UPDATE comandas SET status = 'fechada', fechada_em = NOW() WHERE id = ?",
+        "UPDATE comandas SET status = 'fechada', fechada_em = GETDATE() WHERE id = ?",
         [req.params.id]
       );
       await conn.query(
