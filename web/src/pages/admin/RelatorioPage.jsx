@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer, Sector, Customized } from 'recharts';
+import { ClipboardList, Wallet, TrendingUp } from 'lucide-react';
 import api from '../../services/api';
 
 // -------------------------------------------------------------------
@@ -69,8 +70,8 @@ export default function RelatorioPage() {
   const s = styles;
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 12, flexShrink: 0 }}>
         <h2 style={{ margin: 0 }}>Relatório</h2>
 
         {/* Filtro de período — presets + intervalo personalizado, tudo numa linha */}
@@ -99,36 +100,40 @@ function Conteudo({ relatorio }) {
   const s = styles;
 
   return (
-    <>
-      <div style={s.cards}>
-        <StatCard label="Comandas fechadas" value={relatorio.total_comandas} />
-        <StatCard label="Faturamento"        value={fmtMoeda(relatorio.faturamento)} />
-        <StatCard label="Ticket médio"       value={fmtMoeda(relatorio.ticket_medio)} />
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <div style={{ ...s.cards, flexShrink: 0 }}>
+        <StatCard icon={ClipboardList} color="#2a78d6" label="Comandas fechadas" value={relatorio.total_comandas} />
+        <StatCard icon={Wallet}        color="#1baf7a" label="Faturamento"        value={fmtMoeda(relatorio.faturamento)} />
+        <StatCard icon={TrendingUp}    color="#eb6834" label="Ticket médio"       value={fmtMoeda(relatorio.ticket_medio)} />
       </div>
 
-      <div style={s.chartCard}>
-        <h3 style={s.chartTitle}>Faturamento por dia</h3>
-        <GraficoBarrasDias dados={preencherDias(relatorio.por_dia, relatorio.inicio, relatorio.fim)} />
+      <div style={{ ...s.chartCard, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <h3 style={{ ...s.chartTitle, flexShrink: 0 }}>Faturamento por dia</h3>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <GraficoBarrasDias dados={preencherDias(relatorio.por_dia, relatorio.inicio, relatorio.fim)} />
+        </div>
       </div>
 
-      <div style={s.duasColunas}>
-        <div style={s.chartCard}>
-          <h3 style={s.chartTitle}>Itens mais vendidos</h3>
+      <div style={{ ...s.duasColunas, flex: 1, minHeight: 0 }}>
+        <div style={{ ...s.chartCard, marginBottom: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <h3 style={{ ...s.chartTitle, flexShrink: 0 }}>Itens mais vendidos</h3>
           {relatorio.itens_mais_vendidos.length === 0
             ? <p style={{ color: '#888' }}>Nenhum dado para este período.</p>
-            : <RankingHorizontal
-                itens={relatorio.itens_mais_vendidos.map((i) => ({ label: i.nome, valor: Number(i.receita), sub: `${i.total_vendido}× vendido` }))}
-                cor={AZUL} />}
+            : <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                <RankingHorizontal
+                  itens={relatorio.itens_mais_vendidos.map((i) => ({ label: i.nome, valor: Number(i.receita), sub: `${i.total_vendido}× vendido` }))}
+                  cor={AZUL} />
+              </div>}
         </div>
 
-        <div style={s.chartCard}>
-          <h3 style={s.chartTitle}>Faturamento por categoria</h3>
+        <div style={{ ...s.chartCard, marginBottom: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <h3 style={{ ...s.chartTitle, flexShrink: 0 }}>Faturamento por categoria</h3>
           {relatorio.por_categoria.length === 0
             ? <p style={{ color: '#888' }}>Nenhum dado para este período.</p>
-            : <div style={{ height: 300 }}><PieCategoria dados={relatorio.por_categoria} /></div>}
+            : <div style={{ flex: 1, minHeight: 0 }}><PieCategoria dados={relatorio.por_categoria} /></div>}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -137,12 +142,30 @@ function Conteudo({ relatorio }) {
 // -------------------------------------------------------------------
 function GraficoBarrasDias({ dados }) {
   const [hover, setHover] = useState(null); // { idx, x, y }
+  const containerRef = useRef(null);
+  const [W, setW] = useState(720);
+  const [H, setH] = useState(140);
   const s = styles;
+
+  // o viewBox acompanha o tamanho real do container (1 unidade = 1px),
+  // então o gráfico preenche exatamente o espaço que o flex reservou pra
+  // ele, sem esticar nem sobrar.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0]?.contentRect || {};
+      if (width) setW(width);
+      if (height) setH(Math.max(height, 100));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const max = Math.max(1, ...dados.map((d) => Number(d.faturamento)));
   const idxMax = dados.reduce((best, d, i) => (Number(d.faturamento) > Number(dados[best]?.faturamento ?? -1) ? i : best), 0);
 
-  const W = 720, H = 220, padL = 44, padB = 26, padT = 16;
+  const padL = 44, padB = 26, padT = 16;
   const areaW = W - padL - 8, areaH = H - padB - padT;
   const n = Math.max(dados.length, 1);
   const slot = areaW / n;
@@ -154,8 +177,8 @@ function GraficoBarrasDias({ dados }) {
   if (dados.length === 0) return <p style={{ color: '#888' }}>Nenhum dado para este período.</p>;
 
   return (
-    <div style={{ position: 'relative' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+    <div ref={containerRef} style={{ position: 'relative', height: '100%' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%', display: 'block' }}>
         {/* gridlines */}
         {yTicks.map((t, i) => {
           const y = padT + areaH - (t / max) * areaH;
@@ -341,9 +364,12 @@ function PieCategoria({ dados }) {
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ icon: Icon, color, label, value }) {
   return (
     <div style={styles.statCard}>
+      <div style={{ ...styles.statBadge, background: `${color}1a`, color }}>
+        <Icon size={15} />
+      </div>
       <div style={styles.statValue}>{value}</div>
       <div style={styles.statLabel}>{label}</div>
     </div>
@@ -357,14 +383,15 @@ const styles = {
   filtroDivisor: { width: 1, height: 22, background: '#ddd', margin: '0 4px' },
   dateInput:   { padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13 },
 
-  cards:    { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 },
-  statCard: { background: '#fff', padding: 20, borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.1)', textAlign: 'center' },
-  statValue:{ fontSize: 28, fontWeight: 700, color: '#1a1a2e' },
+  cards:    { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 14 },
+  statCard: { position: 'relative', background: '#fff', padding: 14, borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.1)', textAlign: 'center' },
+  statBadge:{ position: 'absolute', top: 10, left: 10, width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  statValue:{ fontSize: 26, fontWeight: 700, color: '#1a1a2e' },
   statLabel:{ fontSize: 13, color: '#888', marginTop: 4 },
 
-  chartCard:  { background: '#fcfcfb', border: '1px solid #f0f0ee', borderRadius: 12, padding: 18, marginBottom: 20 },
-  chartTitle: { margin: '0 0 14px', fontSize: 15, fontWeight: 700, color: '#1a1a2e' },
-  duasColunas:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 },
+  chartCard:  { background: '#fcfcfb', border: '1px solid #f0f0ee', borderRadius: 12, padding: 14, marginBottom: 14 },
+  chartTitle: { margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#1a1a2e' },
+  duasColunas:{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 },
 
   tooltip: { background: '#1a1a1a', color: '#fff', padding: '8px 12px', borderRadius: 8, fontSize: 12, pointerEvents: 'none', zIndex: 10, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,.25)' },
 

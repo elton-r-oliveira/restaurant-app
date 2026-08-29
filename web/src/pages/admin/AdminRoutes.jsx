@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, Users, BarChart2, ChefHat, LogOut } from 'lucide-react';
 import MesasPage     from './MesasPage';
@@ -9,8 +10,10 @@ import logo from '../../assets/logo.svg';
 
 export default function AdminRoutes() {
   const navigate = useNavigate();
+  const [hoverSair, setHoverSair] = useState(false);
 
   function sair() {
+    if (!confirm('Deseja realmente sair?')) return;
     localStorage.clear();
     navigate('/login');
   }
@@ -21,7 +24,7 @@ export default function AdminRoutes() {
   const activeStyle = { background: '#FF9500' };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <nav style={nav}>
         <img src={logo} alt="Comanda Digital" style={{ height: 64 }} />
         <div style={links}>
@@ -31,7 +34,18 @@ export default function AdminRoutes() {
           <NavLink to="/admin/relatorio" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}><BarChart2 size={20} /> Relatório</NavLink>
           <NavLink to="/admin/cozinha"   style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}><ChefHat size={20} /> Cozinha</NavLink>
         </div>
-        <button onClick={sair} style={{ ...link, background: 'transparent', border: '1px solid #555', cursor: 'pointer' }}><LogOut size={20} /> Sair</button>
+        <button
+          onClick={sair}
+          onMouseEnter={() => setHoverSair(true)}
+          onMouseLeave={() => setHoverSair(false)}
+          style={{
+            ...link,
+            background: hoverSair ? '#e63946' : 'transparent',
+            border: `1px solid ${hoverSair ? '#e63946' : '#555'}`,
+            cursor: 'pointer',
+            transition: 'background .15s, border-color .15s',
+          }}
+        ><LogOut size={20} /> Sair</button>
       </nav>
 
       <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
