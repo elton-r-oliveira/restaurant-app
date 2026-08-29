@@ -2,6 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt    = require('jsonwebtoken');
 const db     = require('../config/database');
+const { sql } = db;
 
 // POST /auth/login
 // Body: { email, senha }
@@ -13,16 +14,11 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ erro: 'Email e senha são obrigatórios' });
     }
 
-    const [rows] = await db.query(
-      `SELECT u.id, u.nome, u.email, u.senha_hash, u.role, u.ativo,
-              u.restaurante_id, r.nome AS restaurante_nome
-       FROM usuarios u
-       JOIN restaurantes r ON r.id = u.restaurante_id
-       WHERE u.email = ? AND r.ativo = 1`,
-      [email]
-    );
+    const { recordset } = await db.execute('s_login_busca_por_email', [
+      ['email', sql.NVarChar(150), email],
+    ]);
 
-    const usuario = rows[0];
+    const usuario = recordset[0];
     if (!usuario || !usuario.ativo) {
       return res.status(401).json({ erro: 'Credenciais inválidas' });
     }

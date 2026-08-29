@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db     = require('../config/database');
+const { sql } = db;
 const { autenticar, autorizar } = require('../middleware/auth');
 
 const rid = (req) => req.usuario.restaurante_id;
@@ -7,34 +8,25 @@ const rid = (req) => req.usuario.restaurante_id;
 // GET /mesas — lista todas as mesas do restaurante
 router.get('/', autenticar, async (req, res, next) => {
   try {
-    const [rows] = await db.query(
-      'SELECT id, numero, capacidade, status FROM mesas WHERE restaurante_id = ? ORDER BY numero',
-      [rid(req)]
-    );
-    res.json(rows);
+    const { recordset } = await db.execute('s_mesas_lista', [
+      ['restauranteId', sql.Int, rid(req)],
+    ]);
+    res.json(recordset);
   } catch (err) { next(err); }
 });
 
 // GET /mesas/:id — detalhe de uma mesa + comanda aberta
 router.get('/:id', autenticar, async (req, res, next) => {
   try {
-    const [mesas] = await db.query(
-      'SELECT id, numero, capacidade, status FROM mesas WHERE id = ? AND restaurante_id = ?',
-      [req.params.id, rid(req)]
-    );
+    const { recordsets } = await db.execute('s_mesas_detalha', [
+      ['id', sql.Int, req.params.id],
+      ['restauranteId', sql.Int, rid(req)],
+    ]);
+    const [mesas, comandasAtivas] = recordsets;
     if (!mesas.length) return res.status(404).json({ erro: 'Mesa não encontrada' });
 
     const mesa = mesas[0];
-
-    const [comandas] = await db.query(
-      `SELECT c.id, c.status, c.total, c.aberta_em,
-              u.nome AS garcom_nome
-       FROM comandas c
-       JOIN usuarios u ON u.id = c.garcom_id
-       WHERE c.mesa_id = ? AND c.status = 'aberta'`,
-      [mesa.id]
-    );
-    mesa.comanda_ativa = comandas[0] || null;
+    mesa.comanda_ativa = comandasAtivas[0] || null;
 
     res.json(mesa);
   } catch (err) { next(err); }
@@ -46,11 +38,12 @@ router.post('/', autenticar, autorizar('admin'), async (req, res, next) => {
     const { numero, capacidade } = req.body;
     if (!numero) return res.status(400).json({ erro: 'Número da mesa é obrigatório' });
 
-    const [result] = await db.query(
-      'INSERT INTO mesas (restaurante_id, numero, capacidade) VALUES (?, ?, ?)',
-      [rid(req), numero, capacidade || 4]
-    );
-    res.status(201).json({ id: result.insertId, numero, capacidade: capacidade || 4, status: 'livre' });
+    const { recordset } = await db.execute('s_mesas_insere', [
+      ['restauranteId', sql.Int, rid(req)],
+      ['numero', sql.SmallInt, numero],
+      ['capacidade', sql.SmallInt, capacidade || 4],
+    ]);
+    res.status(201).json(recordset[0]);
   } catch (err) {
     if (err.number === 2627 || err.number === 2601) return res.status(409).json({ erro: 'Número de mesa já existe' });
     next(err);
@@ -61,10 +54,12 @@ router.post('/', autenticar, autorizar('admin'), async (req, res, next) => {
 router.put('/:id', autenticar, autorizar('admin'), async (req, res, next) => {
   try {
     const { numero, capacidade } = req.body;
-    await db.query(
-      'UPDATE mesas SET numero = COALESCE(?, numero), capacidade = COALESCE(?, capacidade) WHERE id = ? AND restaurante_id = ?',
-      [numero, capacidade, req.params.id, rid(req)]
-    );
+    await db.execute('s_mesas_atualiza', [
+      ['id', sql.Int, req.params.id],
+      ['restauranteId', sql.Int, rid(req)],
+      ['numero', sql.SmallInt, numero ?? null],
+      ['capacidade', sql.SmallInt, capacidade ?? null],
+    ]);
     res.json({ ok: true });
   } catch (err) { next(err); }
 });
@@ -72,10 +67,10 @@ router.put('/:id', autenticar, autorizar('admin'), async (req, res, next) => {
 // DELETE /mesas/:id — remover mesa (admin)
 router.delete('/:id', autenticar, autorizar('admin'), async (req, res, next) => {
   try {
-    await db.query(
-      'DELETE FROM mesas WHERE id = ? AND restaurante_id = ?',
-      [req.params.id, rid(req)]
-    );
+    await db.execute('s_mesas_remove', [
+      ['id', sql.Int, req.params.id],
+      ['restauranteId', sql.Int, rid(req)],
+    ]);
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

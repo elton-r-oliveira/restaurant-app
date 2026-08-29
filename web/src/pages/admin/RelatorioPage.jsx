@@ -21,7 +21,8 @@ const CAT_COLOR = {
 function toISO(d) { return d.toISOString().slice(0, 10); }
 function addDays(d, n) { const c = new Date(d); c.setDate(c.getDate() + n); return c; }
 function fmtDiaMes(iso) { const [, m, d] = iso.split('-'); return `${d}/${m}`; }
-function fmtMoeda(v) { return `R$ ${Number(v).toFixed(2)}`; }
+const formatadorMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+function fmtMoeda(v) { return formatadorMoeda.format(Number(v)); }
 
 // Preenche os dias sem venda no intervalo com zero, pra o gráfico não
 // "sumir" com dias que não tiveram nenhuma comanda fechada.
