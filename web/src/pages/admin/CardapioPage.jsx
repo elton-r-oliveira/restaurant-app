@@ -1,13 +1,51 @@
 import { useEffect, useState } from 'react';
+import {
+  Tag, Type, Hash, AlignLeft, DollarSign, Plus, Save, X, Pencil, Trash2,
+  CheckCircle2, XCircle, Apple, UtensilsCrossed, Coffee, IceCreamCone,
+} from 'lucide-react';
 import api from '../../services/api';
 
+const CAT_STYLE = {
+  entradas:   { color: '#f39c12', Icon: Apple },
+  pratos:     { color: '#e63946', Icon: UtensilsCrossed },
+  bebidas:    { color: '#3498db', Icon: Coffee },
+  sobremesas: { color: '#9b59b6', Icon: IceCreamCone },
+};
+const DEFAULT_CAT_STYLE = { color: '#7f8c8d', Icon: Tag };
+
+function catStyle(nome) {
+  return CAT_STYLE[nome?.toLowerCase()] || DEFAULT_CAT_STYLE;
+}
+
+function CategoriaIcon({ nome, size = 18, badgeSize = 30, radius = 8, cor }) {
+  const { color, Icon } = catStyle(nome);
+  return (
+    <div style={{ ...styles.catBadge, width: badgeSize, height: badgeSize, borderRadius: radius, background: cor || color }}>
+      <Icon size={size} color="#fff" strokeWidth={2} />
+    </div>
+  );
+}
+
+function FieldIcon({ icon: Icon, children }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <Icon size={16} color="#999" style={styles.fieldIcon} />
+      {children}
+    </div>
+  );
+}
+
+const ITEM_VAZIO = { nome: '', descricao: '', preco: '', disponivel: true };
+
 export default function CardapioPage() {
-  const [categorias, setCategorias] = useState([]);
-  const [itens,      setItens]      = useState([]);
-  const [catForm,    setCatForm]    = useState({ nome: '', ordem: '' });
-  const [itemForm,   setItemForm]   = useState({ categoria_id: '', nome: '', descricao: '', preco: '', disponivel: true });
-  const [editCat,    setEditCat]    = useState(null);
-  const [editItem,   setEditItem]   = useState(null);
+  const [categorias,  setCategorias]  = useState([]);
+  const [itens,       setItens]       = useState([]);
+  const [catAtiva,    setCatAtiva]    = useState(null);
+  const [catForm,     setCatForm]     = useState({ nome: '', ordem: '' });
+  const [itemForm,    setItemForm]    = useState(ITEM_VAZIO);
+  const [editCat,     setEditCat]     = useState(null);
+  const [editItem,    setEditItem]    = useState(null);
+  const [showCatForm, setShowCatForm] = useState(false);
 
   async function carregar() {
     const [c, i] = await Promise.all([
@@ -16,6 +54,7 @@ export default function CardapioPage() {
     ]);
     setCategorias(c.data);
     setItens(i.data);
+    setCatAtiva((prev) => prev ?? c.data[0]?.id ?? null);
   }
 
   useEffect(() => { carregar(); }, []);
@@ -29,88 +68,166 @@ export default function CardapioPage() {
     }
     setCatForm({ nome: '', ordem: '' });
     setEditCat(null);
+    setShowCatForm(false);
+    carregar();
+  }
+
+  function editarCategoria(c) {
+    setEditCat(c.id);
+    setCatForm({ nome: c.nome, ordem: c.ordem });
+    setShowCatForm(true);
+  }
+
+  async function removerCategoria(id) {
+    await api.delete(`/cardapio/categorias/${id}`);
+    if (catAtiva === id) setCatAtiva(null);
     carregar();
   }
 
   async function salvarItem(e) {
     e.preventDefault();
+    const payload = { ...itemForm, categoria_id: catAtiva };
     if (editItem) {
-      await api.put(`/cardapio/itens/${editItem}`, itemForm);
+      await api.put(`/cardapio/itens/${editItem}`, payload);
     } else {
-      await api.post('/cardapio/itens', itemForm);
+      await api.post('/cardapio/itens', payload);
     }
-    setItemForm({ categoria_id: '', nome: '', descricao: '', preco: '', disponivel: true });
+    setItemForm(ITEM_VAZIO);
     setEditItem(null);
     carregar();
   }
 
   const s = styles;
+  const itensDaCategoria = itens.filter((i) => i.categoria_id === catAtiva);
+  const categoriaAtiva = categorias.find((c) => c.id === catAtiva);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 32 }}>
-      {/* Categorias */}
-      <div>
-        <h3 style={{ marginBottom: 14 }}>Categorias</h3>
-        <form onSubmit={salvarCategoria} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          <input style={s.input} placeholder="Nome" value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} required />
-          <input style={s.input} placeholder="Ordem" type="number" value={catForm.ordem} onChange={(e) => setCatForm({ ...catForm, ordem: e.target.value })} />
-          <button style={s.btn} type="submit">{editCat ? 'Salvar' : 'Adicionar'}</button>
-          {editCat && <button type="button" onClick={() => { setEditCat(null); setCatForm({ nome: '', ordem: '' }); }} style={{ ...s.btn, background: '#aaa' }}>Cancelar</button>}
-        </form>
-
-        {categorias.map((c) => (
-          <div key={c.id} style={s.listItem}>
-            <span style={{ fontWeight: 600 }}>{c.nome}</span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={s.link} onClick={() => { setEditCat(c.id); setCatForm({ nome: c.nome, ordem: c.ordem }); }}>Editar</button>
-              <button style={{ ...s.link, color: '#e63946' }} onClick={async () => { await api.delete(`/cardapio/categorias/${c.id}`); carregar(); }}>Remover</button>
+    <div>
+      {/* Categorias — cards lado a lado, igual ao mobile */}
+      <h3 style={s.sectionTitle}><Tag size={20} /> Categorias</h3>
+      <div style={s.catsRow}>
+        {categorias.map((c) => {
+          const { color, Icon } = catStyle(c.nome);
+          const ativa = c.id === catAtiva;
+          return (
+            <div key={c.id} style={{ ...s.catCard, ...(ativa ? { background: color, borderColor: color } : {}) }} onClick={() => setCatAtiva(c.id)}>
+              <div style={s.catCardActions}>
+                <button style={s.miniIconBtn} title="Editar" onClick={(e) => { e.stopPropagation(); editarCategoria(c); }}>
+                  <Pencil size={12} color={ativa ? '#fff' : '#555'} />
+                </button>
+                <button style={s.miniIconBtn} title="Remover" onClick={(e) => { e.stopPropagation(); removerCategoria(c.id); }}>
+                  <Trash2 size={12} color={ativa ? '#fff' : '#e63946'} />
+                </button>
+              </div>
+              <Icon size={24} color={ativa ? '#fff' : color} strokeWidth={2} />
+              <span style={{ ...s.catCardText, color: ativa ? '#fff' : '#555' }}>{c.nome}</span>
             </div>
-          </div>
-        ))}
+          );
+        })}
+        <div style={s.catCardAdd} onClick={() => { setEditCat(null); setCatForm({ nome: '', ordem: '' }); setShowCatForm((v) => !v); }}>
+          <Plus size={22} color="#999" />
+          <span style={{ ...s.catCardText, color: '#999' }}>Nova</span>
+        </div>
       </div>
 
-      {/* Itens */}
-      <div>
-        <h3 style={{ marginBottom: 14 }}>Itens do Cardápio</h3>
-        <form onSubmit={salvarItem} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-          <select style={s.input} value={itemForm.categoria_id} onChange={(e) => setItemForm({ ...itemForm, categoria_id: e.target.value })} required>
-            <option value="">Categoria</option>
-            {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
-          <input style={s.input} placeholder="Nome do item" value={itemForm.nome} onChange={(e) => setItemForm({ ...itemForm, nome: e.target.value })} required />
-          <input style={{ ...s.input, gridColumn: '1/-1' }} placeholder="Descrição" value={itemForm.descricao} onChange={(e) => setItemForm({ ...itemForm, descricao: e.target.value })} />
-          <input style={s.input} placeholder="Preço (R$)" type="number" step="0.01" value={itemForm.preco} onChange={(e) => setItemForm({ ...itemForm, preco: e.target.value })} required />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
-            <input type="checkbox" checked={itemForm.disponivel} onChange={(e) => setItemForm({ ...itemForm, disponivel: e.target.checked })} />
-            Disponível
-          </label>
-          <button style={{ ...s.btn, gridColumn: '1/-1' }} type="submit">{editItem ? 'Salvar' : 'Adicionar item'}</button>
-          {editItem && <button type="button" onClick={() => { setEditItem(null); setItemForm({ categoria_id: '', nome: '', descricao: '', preco: '', disponivel: true }); }} style={{ ...s.btn, background: '#aaa', gridColumn: '1/-1' }}>Cancelar</button>}
+      {showCatForm && (
+        <form onSubmit={salvarCategoria} style={s.catForm}>
+          <FieldIcon icon={Type}>
+            <input style={s.inputIcon} placeholder="Nome" value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} required />
+          </FieldIcon>
+          <FieldIcon icon={Hash}>
+            <input style={{ ...s.inputIcon, width: 100 }} placeholder="Ordem" type="number" value={catForm.ordem} onChange={(e) => setCatForm({ ...catForm, ordem: e.target.value })} />
+          </FieldIcon>
+          <button style={s.btn} type="submit">
+            {editCat ? <Save size={16} /> : <Plus size={16} />} {editCat ? 'Salvar' : 'Adicionar'}
+          </button>
+          <button type="button" onClick={() => { setShowCatForm(false); setEditCat(null); }} style={{ ...s.btn, background: '#aaa' }}>
+            <X size={16} /> Cancelar
+          </button>
         </form>
+      )}
 
-        {itens.map((i) => (
-          <div key={i.id} style={s.listItem}>
-            <div>
-              <div style={{ fontWeight: 600 }}>{i.nome} <span style={{ color: '#888', fontWeight: 400, fontSize: 13 }}>({i.categoria_nome})</span></div>
-              <div style={{ fontSize: 13, color: '#555' }}>R$ {Number(i.preco).toFixed(2)} · {i.disponivel ? '✅ Disponível' : '❌ Indisponível'}</div>
+      {/* Itens da categoria selecionada */}
+      <h3 style={{ ...s.sectionTitle, marginTop: 28 }}>
+        <UtensilsCrossed size={20} /> Itens {categoriaAtiva ? `— ${categoriaAtiva.nome}` : ''}
+      </h3>
+
+      {!categoriaAtiva ? (
+        <p style={{ color: '#888' }}>Crie uma categoria para começar a adicionar itens.</p>
+      ) : (
+        <>
+          <form onSubmit={salvarItem} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+            <FieldIcon icon={Type}>
+              <input style={s.inputIcon} placeholder="Nome do item" value={itemForm.nome} onChange={(e) => setItemForm({ ...itemForm, nome: e.target.value })} required />
+            </FieldIcon>
+            <FieldIcon icon={DollarSign}>
+              <input style={s.inputIcon} placeholder="Preço (R$)" type="number" step="0.01" value={itemForm.preco} onChange={(e) => setItemForm({ ...itemForm, preco: e.target.value })} required />
+            </FieldIcon>
+            <div style={{ gridColumn: '1/-1' }}>
+              <FieldIcon icon={AlignLeft}>
+                <input style={s.inputIcon} placeholder="Descrição" value={itemForm.descricao} onChange={(e) => setItemForm({ ...itemForm, descricao: e.target.value })} />
+              </FieldIcon>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={s.link} onClick={() => {
-                setEditItem(i.id);
-                setItemForm({ categoria_id: i.categoria_id, nome: i.nome, descricao: i.descricao || '', preco: i.preco, disponivel: !!i.disponivel });
-              }}>Editar</button>
-              <button style={{ ...s.link, color: '#e63946' }} onClick={async () => { await api.delete(`/cardapio/itens/${i.id}`); carregar(); }}>Remover</button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
+              <input type="checkbox" checked={itemForm.disponivel} onChange={(e) => setItemForm({ ...itemForm, disponivel: e.target.checked })} />
+              <CheckCircle2 size={15} color="#2ecc71" /> Disponível
+            </label>
+            <div />
+            <button style={{ ...s.btn, gridColumn: '1/-1' }} type="submit">
+              {editItem ? <Save size={16} /> : <Plus size={16} />} {editItem ? 'Salvar' : 'Adicionar item'}
+            </button>
+            {editItem && (
+              <button type="button" onClick={() => { setEditItem(null); setItemForm(ITEM_VAZIO); }} style={{ ...s.btn, background: '#aaa', gridColumn: '1/-1' }}>
+                <X size={16} /> Cancelar
+              </button>
+            )}
+          </form>
+
+          {itensDaCategoria.map((i) => (
+            <div key={i.id} style={s.itemCard}>
+              <CategoriaIcon nome={i.categoria_nome} size={20} badgeSize={44} radius={12} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>{i.nome}</span>
+                {i.descricao && <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{i.descricao}</div>}
+                <div style={{ fontSize: 14, color: '#e63946', fontWeight: 700, marginTop: 4 }}>R$ {Number(i.preco).toFixed(2)}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {i.disponivel
+                  ? <CheckCircle2 size={16} color="#2ecc71" title="Disponível" style={{ marginRight: 4 }} />
+                  : <XCircle size={16} color="#e63946" title="Indisponível" style={{ marginRight: 4 }} />}
+                <button style={s.iconBtn} title="Editar" onClick={() => {
+                  setEditItem(i.id);
+                  setItemForm({ nome: i.nome, descricao: i.descricao || '', preco: i.preco, disponivel: !!i.disponivel });
+                }}>
+                  <Pencil size={15} />
+                </button>
+                <button style={{ ...s.iconBtn, color: '#e63946' }} title="Remover" onClick={async () => { await api.delete(`/cardapio/itens/${i.id}`); carregar(); }}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+          {itensDaCategoria.length === 0 && <p style={{ color: '#888' }}>Nenhum item nessa categoria ainda.</p>}
+        </>
+      )}
     </div>
   );
 }
 
 const styles = {
-  input:    { padding: '8px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14 },
-  btn:      { padding: '9px 0', background: '#e63946', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 },
-  listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#fff', borderRadius: 8, marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,.08)' },
-  link:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#555' },
+  sectionTitle: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 },
+  inputIcon:  { width: '100%', boxSizing: 'border-box', padding: '8px 12px 8px 32px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14 },
+  fieldIcon:  { position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' },
+  btn:        { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', background: '#e63946', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 },
+  itemCard:   { display: 'flex', alignItems: 'flex-start', gap: 12, padding: 14, background: '#fff', borderRadius: 12, marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,.1)' },
+  catBadge:   { display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  iconBtn:    { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', color: '#555' },
+
+  catsRow:      { display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 },
+  catCard:      { position: 'relative', flex: '1 1 110px', height: 100, background: '#fff', borderRadius: 14, border: '1px solid #ddd', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' },
+  catCardAdd:   { flex: '1 1 110px', height: 100, background: '#fafafa', borderRadius: 14, border: '1px dashed #ccc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' },
+  catCardText:  { fontSize: 12, fontWeight: 600, textAlign: 'center' },
+  catCardActions: { position: 'absolute', top: 6, right: 6, display: 'flex', gap: 2 },
+  miniIconBtn:  { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, background: 'rgba(0,0,0,.06)', border: 'none', borderRadius: 5, cursor: 'pointer' },
+  catForm:      { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, background: '#fff', padding: 12, borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.08)', maxWidth: 520 },
 };

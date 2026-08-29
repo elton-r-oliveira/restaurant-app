@@ -5,6 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { conectarSocket, desconectarSocket } from '../services/socket';
 
+function MesaIcon({ color }) {
+  return (
+    <View style={[s.mesaIcon, { backgroundColor: color }]}>
+      <View style={s.mesaIconRing} />
+    </View>
+  );
+}
+
 const COR = { livre: '#2ecc71', ocupada: '#e67e22', reservada: '#3498db' };
 
 export default function MesasScreen({ navigation }) {
@@ -54,6 +62,7 @@ export default function MesasScreen({ navigation }) {
         contentContainerStyle={s.grid}
         renderItem={({ item }) => (
           <TouchableOpacity style={[s.card, { borderTopColor: COR[item.status] }]} onPress={() => handleMesa(item)}>
+            <MesaIcon color={COR[item.status]} />
             <Text style={s.num}>{item.numero}</Text>
             <Text style={s.cap}>{item.capacidade} lug.</Text>
             <View style={[s.badge, { backgroundColor: COR[item.status] }]}>
@@ -74,7 +83,9 @@ const s = StyleSheet.create({
   sub:       { color: '#aaa', fontSize: 13, marginRight: 12 },
   sair:      { color: '#e63946', fontWeight: '700' },
   grid:      { padding: 12 },
-  card:      { flex: 1, margin: 6, backgroundColor: '#fff', borderRadius: 12, padding: 14, borderTopWidth: 4, alignItems: 'center', elevation: 2 },
+  card:      { flex: 1, margin: 6, backgroundColor: '#fff', borderRadius: 14, padding: 18, borderTopWidth: 4, alignItems: 'center', elevation: 2 },
+  mesaIcon:  { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  mesaIconRing: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: 'rgba(255,255,255,.7)' },
   num:       { fontSize: 22, fontWeight: '700', color: '#1a1a2e' },
   cap:       { fontSize: 12, color: '#888', marginTop: 2, marginBottom: 6 },
   badge:     { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },

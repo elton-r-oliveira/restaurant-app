@@ -85,31 +85,34 @@ function Coluna({ titulo, cor, itens, onAcao, labelAcao }) {
   return (
     <div style={s.coluna}>
       <div style={{ ...s.colunaHeader, background: cor }}>{titulo} ({itens.length})</div>
-      {itens.length === 0 && <p style={s.vazio}>Nenhum item</p>}
-      {itens.map((item) => (
-        <div key={item.id} style={s.card}>
-          <div style={s.cardTop}>
-            <span style={s.mesa}>Mesa {item.mesa_numero ?? '?'}</span>
-            <span style={s.qtd}>×{item.quantidade}</span>
+      <div style={s.colunaBody}>
+        {itens.length === 0 && <p style={s.vazio}>Nenhum item</p>}
+        {itens.map((item) => (
+          <div key={item.id} style={s.card}>
+            <div style={s.cardTop}>
+              <span style={s.mesa}>Mesa {item.mesa_numero ?? '?'}</span>
+              <span style={s.qtd}>×{item.quantidade}</span>
+            </div>
+            <div style={s.itemNome}>{item.item_nome}</div>
+            {item.observacao && <div style={s.obs}>💬 {item.observacao}</div>}
+            {onAcao && (
+              <button style={{ ...s.btn, background: cor }} onClick={() => onAcao(item)}>
+                {labelAcao}
+              </button>
+            )}
           </div>
-          <div style={s.itemNome}>{item.item_nome}</div>
-          {item.observacao && <div style={s.obs}>💬 {item.observacao}</div>}
-          {onAcao && (
-            <button style={{ ...s.btn, background: cor }} onClick={() => onAcao(item)}>
-              {labelAcao}
-            </button>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  page:        { padding: 20, background: '#111', minHeight: '100vh', color: '#fff' },
+  page:        { padding: 20, background: '#111', borderRadius: 12, color: '#fff', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
   title:       { fontSize: 22, fontWeight: 700, marginBottom: 20 },
-  colunas:     { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'start' },
-  coluna:      { background: '#1e1e1e', borderRadius: 12, overflow: 'hidden' },
+  colunas:     { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'stretch', flex: 1, minHeight: 0 },
+  coluna:      { background: '#1e1e1e', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
+  colunaBody:  { overflowY: 'auto' },
   colunaHeader:{ padding: '10px 16px', fontWeight: 700, fontSize: 15 },
   vazio:       { padding: 16, color: '#555', fontSize: 14 },
   card:        { background: '#2a2a2a', margin: 10, borderRadius: 8, padding: 14 },

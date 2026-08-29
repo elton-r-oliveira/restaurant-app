@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
+
+const CAT_STYLE = {
+  entradas:   { icon: 'nutrition-outline', color: '#f39c12' },
+  pratos:     { icon: 'restaurant-outline', color: '#e63946' },
+  bebidas:    { icon: 'cafe-outline', color: '#3498db' },
+  sobremesas: { icon: 'ice-cream-outline', color: '#9b59b6' },
+};
+const DEFAULT_CAT_STYLE = { icon: 'fast-food-outline', color: '#7f8c8d' };
+function catStyle(nome) { return CAT_STYLE[nome?.toLowerCase()] || DEFAULT_CAT_STYLE; }
 
 export default function CardapioScreen({ navigation, route }) {
   const { comandaId, mesa_numero } = route.params;
@@ -60,13 +70,18 @@ export default function CardapioScreen({ navigation, route }) {
         value={busca} onChangeText={(t) => { setBusca(t); if (t) setCatAtiva(null); }} />
 
       {!busca && (
-        <FlatList horizontal data={categorias} keyExtractor={(c) => String(c.id)}
-          showsHorizontalScrollIndicator={false} contentContainerStyle={s.cats}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={[s.catBtn, catAtiva === item.id && s.catAtiva]} onPress={() => setCatAtiva(item.id)}>
-              <Text style={[s.catText, catAtiva === item.id && { color: '#fff' }]}>{item.nome}</Text>
-            </TouchableOpacity>
-          )} />
+        <View style={s.cats}>
+          {categorias.map((item) => {
+            const { icon, color } = catStyle(item.nome);
+            const ativa = catAtiva === item.id;
+            return (
+              <TouchableOpacity key={item.id} style={[s.catBtn, ativa && { backgroundColor: color, borderColor: color }]} onPress={() => setCatAtiva(item.id)}>
+                <Ionicons name={icon} size={22} color={ativa ? '#fff' : color} />
+                <Text style={[s.catText, ativa && { color: '#fff' }]} numberOfLines={1}>{item.nome}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       )}
 
       <FlatList data={filtrados} keyExtractor={(i) => String(i.id)}
@@ -76,6 +91,14 @@ export default function CardapioScreen({ navigation, route }) {
           return (
             <View style={s.card}>
               <View style={s.cardRow}>
+                {(() => {
+                  const { icon, color } = catStyle(categorias.find((c) => c.id === item.categoria_id)?.nome);
+                  return (
+                    <View style={[s.itemIconBadge, { backgroundColor: color }]}>
+                      <Ionicons name={icon} size={18} color="#fff" />
+                    </View>
+                  );
+                })()}
                 <View style={{ flex: 1 }}>
                   <Text style={s.nome}>{item.nome}</Text>
                   {item.descricao ? <Text style={s.desc}>{item.descricao}</Text> : null}
@@ -117,12 +140,12 @@ export default function CardapioScreen({ navigation, route }) {
 const s = StyleSheet.create({
   container:   { flex: 1, backgroundColor: '#f5f5f5' },
   busca:       { margin: 12, backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 15, color: '#1a1a2e', borderWidth: 1, borderColor: '#eee' },
-  cats:        { paddingHorizontal: 12, paddingBottom: 8, gap: 8 },
-  catBtn:      { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#ddd' },
-  catAtiva:    { backgroundColor: '#1a1a2e', borderColor: '#1a1a2e' },
-  catText:     { fontSize: 13, color: '#555', fontWeight: '600' },
+  cats:        { flexDirection: 'row', paddingHorizontal: 12, marginBottom: 8, gap: 8 },
+  catBtn:      { flex: 1, height: 68, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#ddd', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 },
+  catText:     { fontSize: 11, color: '#555', fontWeight: '600', textAlign: 'center', marginTop: 4 },
   card:        { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, elevation: 2 },
   cardRow:     { flexDirection: 'row', alignItems: 'center' },
+  itemIconBadge: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   nome:        { fontWeight: '700', fontSize: 15, color: '#1a1a2e', marginBottom: 2 },
   desc:        { fontSize: 12, color: '#888', marginBottom: 4 },
   preco:       { fontSize: 14, color: '#e63946', fontWeight: '700' },

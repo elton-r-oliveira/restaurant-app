@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
+import { UtensilsCrossed } from 'lucide-react';
 import api from '../../services/api';
 import { conectarSocket, desconectarSocket } from '../../services/socket';
+
+function MesaIcon({ color, size = 40 }) {
+  return <UtensilsCrossed size={size} color={color} strokeWidth={1.75} />;
+}
 
 export default function MesasPage() {
   const [mesas,  setMesas]  = useState([]);
@@ -87,10 +92,11 @@ export default function MesasPage() {
 
       <div style={styles.grid}>
         {mesas.map((m) => (
-          <div key={m.id} style={{ ...styles.card, borderTop: `4px solid ${statusColor[m.status]}` }}>
+          <div key={m.id} style={styles.card}>
+            <MesaIcon color={statusColor[m.status]} />
             <div style={styles.cardNum}>Mesa {m.numero}</div>
-            <div style={{ fontSize: 13, color: '#666' }}>{m.capacidade} lugares</div>
-            <div style={{ fontSize: 12, color: statusColor[m.status], fontWeight: 600, marginTop: 4 }}>{m.status}</div>
+            <div style={{ fontSize: 14, color: '#666' }}>{m.capacidade} lugares</div>
+            <div style={{ ...styles.badge, background: statusColor[m.status] }}>{m.status}</div>
             <div style={styles.cardActions}>
               <button onClick={() => editar(m)}    style={styles.smallBtn}>Editar</button>
               <button onClick={() => remover(m.id)} style={{ ...styles.smallBtn, color: '#e63946' }}>Remover</button>
@@ -106,9 +112,10 @@ const styles = {
   form:       { display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' },
   input:      { padding: '8px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, width: 130 },
   btn:        { padding: '8px 18px', background: '#e63946', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 },
-  grid:       { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 },
-  card:       { background: '#fff', borderRadius: 10, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,.1)' },
-  cardNum:    { fontWeight: 700, fontSize: 18 },
-  cardActions:{ display: 'flex', gap: 8, marginTop: 10 },
-  smallBtn:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#555', padding: 0 },
+  grid:       { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 20 },
+  card:       { background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 1px 6px rgba(0,0,0,.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' },
+  cardNum:    { fontWeight: 700, fontSize: 22, marginTop: 12 },
+  badge:      { marginTop: 8, padding: '4px 12px', borderRadius: 12, color: '#fff', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .3 },
+  cardActions:{ display: 'flex', gap: 12, marginTop: 14 },
+  smallBtn:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#555', padding: 0 },
 };

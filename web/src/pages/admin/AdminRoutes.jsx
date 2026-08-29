@@ -1,9 +1,11 @@
 import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { UtensilsCrossed, Users, BarChart2, ChefHat, LogOut } from 'lucide-react';
 import MesasPage     from './MesasPage';
 import CardapioPage  from './CardapioPage';
 import UsuariosPage  from './UsuariosPage';
 import RelatorioPage from './RelatorioPage';
 import CozinhaPage   from '../cozinha/CozinhaPage';
+import logo from '../../assets/logo.svg';
 
 export default function AdminRoutes() {
   const navigate = useNavigate();
@@ -13,23 +15,26 @@ export default function AdminRoutes() {
     navigate('/login');
   }
 
-  const nav = { display: 'flex', gap: 8, padding: '12px 24px', background: '#1a1a2e', alignItems: 'center' };
-  const link = { color: '#fff', textDecoration: 'none', padding: '6px 14px', borderRadius: 6, fontSize: 14 };
-  const activeStyle = { background: '#e63946' };
+  const nav = { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 16, padding: '12px 24px', background: '#1a1a2e' };
+  const links = { display: 'flex', justifyContent: 'center', gap: 8 };
+  const link = { display: 'flex', alignItems: 'center', gap: 8, color: '#fff', textDecoration: 'none', padding: '10px 20px', borderRadius: 8, fontSize: 16, fontWeight: 600 };
+  const activeStyle = { background: '#FF9500' };
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <nav style={nav}>
-        <span style={{ color: '#fff', fontWeight: 700, marginRight: 16 }}>Comanda Digital</span>
-        <NavLink to="/admin/mesas"    style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Mesas</NavLink>
-        <NavLink to="/admin/cardapio" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Cardápio</NavLink>
-        <NavLink to="/admin/usuarios" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Usuários</NavLink>
-        <NavLink to="/admin/relatorio" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Relatório</NavLink>
-        <NavLink to="/admin/cozinha"   style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}>Cozinha</NavLink>
-        <button onClick={sair} style={{ ...link, background: 'transparent', border: '1px solid #555', cursor: 'pointer', marginLeft: 'auto' }}>Sair</button>
+        <img src={logo} alt="Comanda Digital" style={{ height: 64 }} />
+        <div style={links}>
+          <NavLink to="/admin/mesas"    style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}><UtensilsCrossed size={20} /> Mesas</NavLink>
+          <NavLink to="/admin/cardapio" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}><UtensilsCrossed size={20} /> Cardápio</NavLink>
+          <NavLink to="/admin/usuarios" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}><Users size={20} /> Usuários</NavLink>
+          <NavLink to="/admin/relatorio" style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}><BarChart2 size={20} /> Relatório</NavLink>
+          <NavLink to="/admin/cozinha"   style={({ isActive }) => ({ ...link, ...(isActive ? activeStyle : {}) })}><ChefHat size={20} /> Cozinha</NavLink>
+        </div>
+        <button onClick={sair} style={{ ...link, background: 'transparent', border: '1px solid #555', cursor: 'pointer' }}><LogOut size={20} /> Sair</button>
       </nav>
 
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <Routes>
           <Route path="mesas"     element={<MesasPage />} />
           <Route path="cardapio"  element={<CardapioPage />} />
